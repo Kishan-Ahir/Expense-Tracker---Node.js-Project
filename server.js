@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const app = express();
 const path = require("path");
 const bodyparser = require("body-parser");
@@ -69,14 +70,16 @@ app.post("/user/signup", async (req, res) => {
         userExists = true;
         return res.status(400).json(userExists);
       }
-      await User.create({
-        name: name,
-        email: email,
-        password: password
-      }).then(() => {
-        return res.status(201).redirect("/");
-      });
-    });
+      bcrypt.hash(password,10,async(err,hash)=>{
+        await User.create({
+            name: name,
+            email: email,
+            password: hash
+          }).then(() => {
+            return res.status(201).redirect("/");
+          });
+        });
+      })
   } catch (err) {
     res.status(500).json("server error");
   }
@@ -93,12 +96,21 @@ app.post("/user/logincheck", async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
     const users = await User.findAll({ where: { email: email } });
-
-    if (users[0]) {
-      if (users[0].password !== password) {
-        return res.status(403).json("Please enter correct password");
-      }
-      return res.status(200).json("Login Successfully.");
+    if(users[0])
+    {
+        bcrypt.compare(password,users[0].password,(err,result)=>{
+            if(err)
+            {
+                return res.status(404).json(err);
+            }
+            if(result == true)
+            {
+                return res.status(200).json("Login Successfully.");
+            } else if(result == false)
+            {
+                return res.status(403).json("Please enter correct password");
+            }
+        })
     } else return res.status(404).json("User not found");
   } catch (err) {
     return res.status(404).json(err);
