@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js"></script>
+    <title>Add Expenses</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            zoom: 1.3;
+            overflow-x: hidden;
+        }
+        header {
+            background-color : #5ac6bf;
+            color: rgb(241, 249, 249);
+            margin: 0;
+            padding-left: 1%;
+            height: 10%;
+            display: flex;
+            align-items: center;
+        }
+        #expensedescription {
+            color: #4b4b4b;
+            display: flex;
+            align-items: baseline;
+            padding-left: 1%;
+            margin: 1% 0%;
+            width: 100%;
+        }
+        #expensemoney {
+            color: #4b4b4b;
+            display: flex;
+            align-items: baseline;
+            padding-left: 1%;
+            margin: 1% 0%;
+        }
+        #expensetype {
+            color: #4b4b4b;
+            display: flex;
+            align-items: baseline;
+            padding-left: 1%;
+            margin: 1% 0%;
+        }
+        form input,select {
+            color: #4b4b4b;
+            margin-left: 1%;
+            padding-left: 0.5%;
+            border:none;
+            outline:none;
+            border-bottom: #595959 1px solid;
+            width: 35%;
+        }
+        form button {
+            color: #4b4b4b;
+            margin: 1% 0% 0% 0%;
+            padding-left: 0.5%;
+            cursor: pointer;
+            width: 100%;
+            zoom: 1.2;
+        }
+        #itemlist {
+            color: #4b4b4b;
+        }
+        #delete {
+            color: #4b4b4b;
+            margin: 0% 1%;
+            padding-left: 0.5%;
+        }
+        form button:hover , #delete:hover {
+            cursor: pointer;
+            background-color: #b6b6b6;
+            
+        }
+        ul #item {
+            margin: 1% 0%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Add Your Expenses</h1>
+    </header>
+    <main>
+        <form>
+            <div id="expensedescription">
+                <label for="description">Enter Expense Description:</label>
+                <input id="description" type="text" placeholder="Expense Description">
+            </div>
+            <div id="expensemoney">
+                <label for="money">Enter Expense Amount:</label>
+                <input id="money" type="number" placeholder="Expense Amount">
+            </div>
+            <div id="expensetype">
+                <label for="type">Select Expense Type:</label>
+                <select id="type">
+                    <option >Fuel</option>
+                    <option>Study</option>
+                    <option>Entertainment</option>
+                    <option>Travel</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <button type="submit" id="submitbutton">Add Your Expense</button>
+        </form>
+            <div id="list">
+                <ul id="itemlist">
+                </ul>
+            </div>
+    </main>
+    <script>
+        const ul = document.getElementById("itemlist");
+        const button = document.getElementById("submitbutton");
+        button.addEventListener("click",savedata);
+        ul.addEventListener("click",removeitem)
+        window.addEventListener("load",loaddata);
+        async function savedata(event) {
+            event.preventDefault();
+            const description = document.getElementById("description").value;
+            const amount = document.getElementById("money").value;
+            const type = document.getElementById("type").value;
+            const data = {description,amount,type};
+            console.log(data);
+            const response = await axios.post("http://localhost:3000/expense/addexpense",data);
+           const expenseList = response.data;
+           expenseList.forEach((expense)=>{
+                const li = document.createElement("li");
+                li.id = "item";
+                li.setAttribute ("dataid",`${expense.id}`)
+                li.appendChild(document.createTextNode(`Expense Description is ${expense.description}, Expense Amount is ${expense.amount}, Expense type is ${expense.type}.`));
+
+                const deletebtn = document.createElement("button");
+                deletebtn.id = "delete";
+                deletebtn.className = "delete";
+                deletebtn.appendChild(document.createTextNode("Delete"));
+                li.appendChild(deletebtn);
+                ul.appendChild(li);
+           })
+        }
+        async function loaddata() {
+            const response = await axios.get("http://localhost:3000/expense/addexpense");
+           const expenseList = response.data;
+           expenseList.forEach((expense)=>{
+                const li = document.createElement("li");
+                li.id = "item";
+                li.setAttribute ("dataid",`${expense.id}`)
+                li.appendChild(document.createTextNode(`Expense Description is ${expense.description}, Expense Amount is ${expense.amount}, Expense type is ${expense.type}.`));
+
+                const deletebtn = document.createElement("button");
+                deletebtn.id = "delete";
+                deletebtn.className = "delete";
+                deletebtn.appendChild(document.createTextNode("Delete"));
+                li.appendChild(deletebtn);
+                ul.appendChild(li);
+                console.log(li);
+        });
+    };
+        async function removeitem(event) {
+            if(event.target.classList.contains("delete"))
+            {
+                console.log(event.target.parentNode)
+                const li = event.target.parentNode;
+                const id = li.getAttribute("dataid");
+                ul.removeChild(li);
+                await axios.delete(`http://localhost:3000/expense/removeexpense/${id}`);
+            }
+        }
+    </script>
+</body>
+</html>

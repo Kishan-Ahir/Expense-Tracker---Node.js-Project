@@ -34,6 +34,28 @@ const User = sequelize.define("user", {
   }
 });
 
+// Define Expenses model
+const Expenses = sequelize.define("expenses", {
+  id: {
+    type: Sequelize.INTEGER,
+    autoIncrement: true,
+    allowNull: false,
+    primaryKey: true
+  },
+  description: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  amount: {
+    type: Sequelize.DOUBLE,
+    allowNull: false,
+  },
+  type: {
+    type: Sequelize.STRING,
+    allowNull: false
+  }
+});
+
 // Middleware
 app.use(cors());
 app.use(bodyparser.json());
@@ -105,7 +127,10 @@ app.post("/user/logincheck", async (req, res) => {
             }
             if(result == true)
             {
-                return res.status(200).json("Login Successfully.");
+              Expenses.sync()
+              .then(()=>{
+                res.status(201).json({redirect :"/expense"});
+              })
             } else if(result == false)
             {
                 return res.status(403).json("Please enter correct password");
@@ -116,6 +141,33 @@ app.post("/user/logincheck", async (req, res) => {
     return res.status(404).json(err);
   }
 });
+
+app.get("/expense",(req,res,next)=>{
+    return res.status(200).sendFile(path.join(__dirname,"expense.html"));
+});
+
+app.post("/expense/addexpense",async (req,res,next)=>{
+  console.log("This is a data: "+req.body.description+req.body.amount+req.body.type);
+  const description = req.body.description;
+  const amount = req.body.amount;
+  const type = req.body.type;
+    await Expenses.create({
+      description : description,
+      amount : amount,
+      type : type
+    });
+    const expense = await Expenses.findAll();
+    return res.status(200).json(expense);
+});
+
+app.get("/expense/addexpense",async (req,res)=>{
+    const expense = await Expenses.findAll();
+    return res.status(200).json(expense);
+})
+
+app.delete("/expense/removeexpense/:id",async (req,res)=>{
+      await Expenses.destroy({where:{id:req.params.id}});
+})
 
 // Home page route
 app.get("/", (req, res) => {
