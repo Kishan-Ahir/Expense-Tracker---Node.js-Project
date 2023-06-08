@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.1">
+    <link rel="icon" type="image/png" href="./new-account-icon-256x256.png">
+    <title>Sign Up</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            font-size: 100%;
+            overflow-x: hidden;
+            zoom: 1.5; 
+        }
+
+        #header {
+            background-color: #5ac6bf;
+            color: rgb(241, 249, 249);
+            margin: 0;
+            padding-left: 1%;
+            height: 10%;
+            display: flex;
+            align-items: center;
+        }
+
+        main {
+            margin-top: 1%;
+        }
+
+        #form {
+            margin: 0 auto;
+        }
+
+        #form label {
+            margin: 1% 0;
+            padding-left: 1%;
+            color: #595959;
+        }
+
+        #form input {
+            margin: 1% 0% 1.5% 1%;
+            padding-left: 1%;
+            color: #595959;
+            border: none;
+            outline: none;
+            border-bottom: 1px solid #595959;
+        }
+
+        #form input:focus {
+            border-bottom: 1px solid black;
+        }
+
+        #form button {
+            margin-left: 1%;
+            color: #595959;
+            border: 1px solid #595959;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header id="header">
+        <h2>Create Profile</h2>
+    </header>
+    <main>
+        <form id="form">
+            <label for="name" id="namelabel">Profile Name</label><br>
+            <input type="text" id="name" placeholder="Profile Name" required><br>
+            <label for="email" id="emaillabel">Email Address</label><br>
+            <input type="email" id="email" placeholder="Email Address" required><br>
+            <label for="password" id="passwordlabel">Password</label><br>
+            <input type="password" id="password" placeholder="Password" required><br>
+            <button type="submit">Create Account</button>
+        </form>
+    </main>
+</body>
+
+</html>
