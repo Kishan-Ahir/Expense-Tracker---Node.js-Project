@@ -4,6 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.1">
     <link rel="icon" type="image/png" href="./new-account-icon-256x256.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js"></script>
     <title>Sign Up</title>
     <style>
         body {
@@ -11,7 +12,6 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            font-size: 100%;
             overflow-x: hidden;
             zoom: 1.5; 
         }
@@ -50,7 +50,7 @@
         }
 
         #form input:focus {
-            border-bottom: 1px solid black;
+            border-bottom: 1px solid #595959;
         }
 
         #form button {
@@ -58,6 +58,9 @@
             color: #595959;
             border: 1px solid #595959;
             border-radius: 5px;
+        }
+        #form button:hover {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -67,16 +70,35 @@
         <h2>Create Profile</h2>
     </header>
     <main>
-        <form id="form">
-            <label for="name" id="namelabel">Profile Name</label><br>
+        <form id="form" action="/user/signup" method="post">
+            <label for="name" id="namelabel" >Profile Name</label><br>
             <input type="text" id="name" placeholder="Profile Name" required><br>
             <label for="email" id="emaillabel">Email Address</label><br>
             <input type="email" id="email" placeholder="Email Address" required><br>
             <label for="password" id="passwordlabel">Password</label><br>
             <input type="password" id="password" placeholder="Password" required><br>
-            <button type="submit">Create Account</button>
+            <button type="submit" id="submitbutton">Create Account</button>
         </form>
     </main>
+    <script>
+        const button = document.getElementById("submitbutton");
+        const form = document.getElementById("form");
+        button.addEventListener("click",saveUser);
+        async function saveUser(event) {
+            event.preventDefault();
+            const name=document.getElementById("name").value;
+            const email=document.getElementById("email").value;
+            const password=document.getElementById("password").value;
+            const data = {name,email,password};
+            const response = await axios.post("http://localhost:3000/user/signup",data);
+            const userexist = response.data;
+            if(userexist === true)
+            {
+                alert("User alredy exists. Please try again.");
+            } else {
+                alert("User Created Successfully.");
+            }
+        }
+    </script>
 </body>
-
 </html>
