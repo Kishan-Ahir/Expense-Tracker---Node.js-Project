@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const app = express();
 const path = require("path");
 const bodyparser = require("body-parser");
@@ -56,6 +57,14 @@ const Expenses = sequelize.define("expenses", {
   }
 });
 
+User.hasMany(Expenses);
+Expenses.belongsTo(User);
+
+// Creating function to generate token
+function getNewToken(id) {
+  return jwt.sign({ userId: id }, "777kkkAhir777");
+}
+
 // Middleware
 app.use(cors());
 app.use(bodyparser.json());
@@ -92,16 +101,16 @@ app.post("/user/signup", async (req, res) => {
         userExists = true;
         return res.status(400).json(userExists);
       }
-      bcrypt.hash(password,10,async(err,hash)=>{
+      bcrypt.hash(password, 10, async (err, hash) => {
         await User.create({
-            name: name,
-            email: email,
-            password: hash
-          }).then(() => {
-            return res.status(201).redirect("/");
-          });
+          name: name,
+          email: email,
+          password: hash
+        }).then(() => {
+          return res.status(201).redirect("/");
         });
-      })
+      });
+    });
   } catch (err) {
     res.status(500).json("server error");
   }
@@ -118,56 +127,79 @@ app.post("/user/logincheck", async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
     const users = await User.findAll({ where: { email: email } });
-    if(users[0])
-    {
-        bcrypt.compare(password,users[0].password,(err,result)=>{
-            if(err)
-            {
-                return res.status(404).json(err);
-            }
-            if(result == true)
-            {
-              Expenses.sync()
-              .then(()=>{
-                res.status(201).json({redirect :"/expense"});
-              })
-            } else if(result == false)
-            {
-                return res.status(403).json("Please enter correct password");
-            }
-        })
+    if (users[0]) {
+      bcrypt.compare(password, users[0].password, (err, result) => {
+        if (err) {
+          return res.status(404).json(err);
+        }
+        if (result == true) {
+          return res.status(201).json({ redirect: "/expense", token: getNewToken(users[0].id) });
+        } else if (result == false) {
+          return res.status(403).json("Please enter correct password");
+        }
+      });
     } else return res.status(404).json("User not found");
   } catch (err) {
     return res.status(404).json(err);
   }
 });
 
-app.get("/expense",(req,res,next)=>{
-    return res.status(200).sendFile(path.join(__dirname,"expense.html"));
+app.get("/expense", (req, res, next) => {
+  return res.status(200).sendFile(path.join(__dirname, "expense.html"));
 });
 
-app.post("/expense/addexpense",async (req,res,next)=>{
-  console.log("This is a data: "+req.body.description+req.body.amount+req.body.type);
+app.post("/expense/addexpense", async (req, res) => {
   const description = req.body.description;
   const amount = req.body.amount;
   const type = req.body.type;
-    await Expenses.create({
-      description : description,
-      amount : amount,
-      type : type
+  const id = jwt.verify(req.body.token, "777kkkAhir777").userId;
+  await User.findAll({ where: { id: id } })
+    .then(async (users) => {
+      await Expenses.create({
+        description: description,
+        amount: amount,
+        type: type,
+        userId: users[0].id
+      });
+      const expense = await Expenses.findAll({ where: { userId: id } });
+      return res.status(200).json(expense);
     });
-    const expense = await Expenses.findAll();
-    return res.status(200).json(expense);
 });
 
-app.get("/expense/addexpense",async (req,res)=>{
-    const expense = await Expenses.findAll();
-    return res.status(200).json(expense);
-})
+app.get("/expense/addexpense", async (req, res, next) => {
+  const token = req.header("Authorization");
+  const userId = jwt.verify(token, "777kkkAhir777");
+  await User.findAll({ where: { id: userId.userId } })
+    .then((users) => {
+      req.user = users[0];
+      next();
+    })
+    .catch(() => {
+      return res.status(404).json("User Not Found.");
+    });
+}, async (req, res) => {
+  const expense = await Expenses.findAll({ where: { userId: req.user.id } });
+  return res.status(200).json(expense);
+});
 
-app.delete("/expense/removeexpense/:id",async (req,res)=>{
-      await Expenses.destroy({where:{id:req.params.id}});
-})
+app.delete("/expense/removeexpense/:id", async (req, res, next) => {
+  const token = req.header("Authorization");
+  const userId = jwt.verify(token, "777kkkAhir777").userId;
+  await User.findAll({ where: { id: userId } })
+    .then(async (users) => {
+      if (users[0]) {
+        await Expenses.findAll({ where: { id: req.params.id } })
+          .then((expenses) => {
+            if (expenses[0].userId === userId) {
+              return Expenses.destroy({ where: { id: req.params.id } });
+            }
+          });
+      }
+    })
+    .catch(() => {
+      return res.status(404).json("User Not Found.");
+    });
+});
 
 // Home page route
 app.get("/", (req, res) => {
@@ -176,6 +208,9 @@ app.get("/", (req, res) => {
 
 // Sync User model and start server
 User.sync().then(() => {
-  console.log("Server is starting...");
-  app.listen(3000);
+  Expenses.sync()
+    .then(() => {
+      console.log("Server is starting...");
+      return app.listen(3000);
+    });
 });

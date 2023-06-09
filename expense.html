@@ -96,7 +96,7 @@
             <div id="expensetype">
                 <label for="type">Select Expense Type:</label>
                 <select id="type">
-                    <option >Fuel</option>
+                    <option>Fuel</option>
                     <option>Study</option>
                     <option>Entertainment</option>
                     <option>Travel</option>
@@ -105,68 +105,99 @@
             </div>
             <button type="submit" id="submitbutton">Add Your Expense</button>
         </form>
-            <div id="list">
-                <ul id="itemlist">
-                </ul>
-            </div>
+        <div id="list">
+            <ul id="itemlist"></ul>
+        </div>
     </main>
+    
     <script>
         const ul = document.getElementById("itemlist");
         const button = document.getElementById("submitbutton");
-        button.addEventListener("click",savedata);
-        ul.addEventListener("click",removeitem)
-        window.addEventListener("load",loaddata);
+        const token = localStorage.getItem("token");
+        
+        // Event listener for adding an expense
+        button.addEventListener("click", savedata);
+        
+        // Event listener for deleting an expense
+        ul.addEventListener("click", removeitem);
+        
+        // Event listener for loading data on page load
+        window.addEventListener("load", loaddata);
+    
         async function savedata(event) {
             event.preventDefault();
+            
+            // Get expense details from input fields
             const description = document.getElementById("description").value;
             const amount = document.getElementById("money").value;
             const type = document.getElementById("type").value;
-            const data = {description,amount,type};
-            console.log(data);
-            const response = await axios.post("http://localhost:3000/expense/addexpense",data);
-           const expenseList = response.data;
-           expenseList.forEach((expense)=>{
+            const data = { description, amount, type,token };
+    
+            // Send POST request to add an expense
+            const response = await axios.post("http://localhost:3000/expense/addexpense", data);
+            
+            // Get the list of expenses from the response
+            const expenseList = response.data;
+    
+            ul.innerHTML = "";
+            // Iterate over each expense and add it to the list
+            expenseList.forEach((expense) => {
                 const li = document.createElement("li");
                 li.id = "item";
-                li.setAttribute ("dataid",`${expense.id}`)
+                li.setAttribute("dataid", `${expense.id}`);
                 li.appendChild(document.createTextNode(`Expense Description is ${expense.description}, Expense Amount is ${expense.amount}, Expense type is ${expense.type}.`));
-
+    
                 const deletebtn = document.createElement("button");
                 deletebtn.id = "delete";
                 deletebtn.className = "delete";
                 deletebtn.appendChild(document.createTextNode("Delete"));
                 li.appendChild(deletebtn);
                 ul.appendChild(li);
-           })
+            });
         }
+    
         async function loaddata() {
-            const response = await axios.get("http://localhost:3000/expense/addexpense");
-           const expenseList = response.data;
-           expenseList.forEach((expense)=>{
-                const li = document.createElement("li");
-                li.id = "item";
-                li.setAttribute ("dataid",`${expense.id}`)
-                li.appendChild(document.createTextNode(`Expense Description is ${expense.description}, Expense Amount is ${expense.amount}, Expense type is ${expense.type}.`));
+            // Send GET request to load expense data
+             await axios.get("http://localhost:3000/expense/addexpense",{ headers : {"Authorization" : token}})
+            .then((response)=>{
+                // Get the list of expenses from the response
+                const expenseList = response.data;
+    
+                // Iterate over each expense and add it to the list
+                expenseList.forEach((expense) => {
+                    const li = document.createElement("li");
+                    li.id = "item";
+                    li.setAttribute("dataid", `${expense.id}`);
+                    li.appendChild(document.createTextNode(`Expense Description is ${expense.description}, Expense Amount is ${expense.amount}, Expense type is ${expense.type}.`));
 
-                const deletebtn = document.createElement("button");
-                deletebtn.id = "delete";
-                deletebtn.className = "delete";
-                deletebtn.appendChild(document.createTextNode("Delete"));
-                li.appendChild(deletebtn);
-                ul.appendChild(li);
-                console.log(li);
-        });
-    };
+                    const deletebtn = document.createElement("button");
+                    deletebtn.id = "delete";
+                    deletebtn.className = "delete";
+                    deletebtn.appendChild(document.createTextNode("Delete"));
+                    li.appendChild(deletebtn);
+                    ul.appendChild(li);
+                });
+            })
+            .catch((err)=>{
+                if(err.response.data = "User Not Found.")
+                {
+                    alert("User Not Found.");
+                }
+            })
+        };
+    
         async function removeitem(event) {
-            if(event.target.classList.contains("delete"))
-            {
-                console.log(event.target.parentNode)
+            if (event.target.classList.contains("delete")) {
                 const li = event.target.parentNode;
                 const id = li.getAttribute("dataid");
+                                
+                // Remove the expense from the list
                 ul.removeChild(li);
-                await axios.delete(`http://localhost:3000/expense/removeexpense/${id}`);
+                
+                // Send DELETE request to remove the expense
+                await axios.delete(`http://localhost:3000/expense/removeexpense/${id}`,{ headers: {"Authorization": token}});
             }
         }
-    </script>
+    </script>    
 </body>
 </html>
